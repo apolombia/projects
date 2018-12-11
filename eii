@@ -1,0 +1,94 @@
+:-use_module(library(pce)).
+:-use_module(library(pce_style_item)).
+
+main:-
+    new(Menu, dialog('DIAGNÓSTICO DE ENFERMEDAD INFLAMATORIA INTESTINAL' size(500,500))),
+    new(L, label(nombre,'SEA BIENVENIDO A SU AUTOCONSULTA')),
+    new(@texto, label(nombre,'Conteste las preguntas para conocer su estado)),
+    new(@resp1, label(nombre,'')),
+    new(Salir,button('SALIR'),and(message(Menu,destoy),message(menu,free)))),
+    new(@boton, button('REALICE LA CONSLTA',message(@prlog, botones))),
+
+    send(Menu, append(L),new(@btncarrera,button('¿Diagnóstico?')),
+    send(Menu, display,L,point(70,20)),
+    send(Menu, display,L,@boton,point(300,150)),
+    send(Menu, display,L,@texto,point(20,100)),
+    send(Menu, display,Salir,point,(200,200)),
+    send(Menu, display,@resp1,point(20,130)),
+    send(Menu,open_centered),
+    send(@texto,font,font(comic,bold,10)),
+    send(L,font,font(comic,bold,20)).
+
+               %Enfermedades a diagnosticar en cada caso
+enfermedades(Síndrome de intestino irritable):- sii,!.
+enfermedades(Enfermedad de Crohn):- crohn,!.
+enfermedades(Colitis ulcerosa):- ulcerosa,!.
+
+enfermedades (No tiene enfermedad inflamatoria intestinal)
+
+                %Reglas
+sii :- tiene_sii,
+Pregunta(‘¿Sufre de hinchazón abdominal recurrente?’),
+Pregunta(‘¿Esta hinchazón viene acompañada con dolor?’),
+Pregunta(‘¿Sufre de reflujos a menudo?’),
+Pregunta(‘¿Viene sufriendo de estreñimiento, diarrea o se alternan en ciertos periodos de tiempo?’),
+Pregunta(‘¿Le han aparecido, en algún momento, aftas bucales o erupciones cutáneas?’).
+
+crohn :- tiene_crohn,
+Pregunta(‘¿Tiene fiebre recurrente cuando el cuadro sintomático se presenta?’),
+Pregunta(‘¿Tiene dolores articulares esporádicos?’),
+Pregunta(‘¿Sufre de dolores rectales que se dan con fisuras, hemorroides o inflamación?’),
+Pregunta(‘¿Su deposición viene acompañada de sangre, pus o de un color oscuro?’).
+
+ulcerosa :- tiene_ulcerosa,
+Pregunta(‘¿Tiene proctorragia sin haber defecado?’),
+Pregunta(‘¿Pierde peso esporádicamente?’),
+Pregunta(‘¿Se siente fatigado o cansado en ocasiones?’),
+Pregunta(‘¿Se le inflaman los ojos sin razón alguno?’),
+Pregunta(‘¿Tiene adormecimientos o calambres cuando se presenta la sintomatología?’).
+
+inclasificable :- no_es_enfermedad_inflamatoria_intestinal.
+
+                %Guía de identificación de las enfermedades
+tiene_sii:-pregunta(‘¿Le han aparecido, en algún momento, aftas bucales o erupciones cutáneas?’),!.
+tiene_crohn:-pregunta(‘¿Su deposición viene acompañada de sangre, pus o de un color oscuro?’),!.
+tiene_ulcerosa:-pregunta(‘¿Tiene proctorragia sin haber defecado?’),!.
+
+:-dynamic si/1,no/1.
+
+preguntar(Problema):- new(Di,dialog('EXAMEN MÉDICO EII')),
+new(L2,label,(texto,'Responda al siguiente cuestionario:')),
+new(La,label(prob,Problema)),
+
+new(B1,button(si,and(message(Di,retunr,si)))),
+new(B2,button(no,and(message(Di,return,no)))),
+
+         send(Di,append(L2),
+send(Di,append(La)),
+send(Di,append(B1)),
+send(Di,append(B2)),
+
+              send(Di,default_button,si),
+send(Di, open_centered),get(Di,confirm,Answer),
+write(Answer),send(Di,destroy),
+
+              ((Answer==si)->assert(si(Problema)));
+assert(no(Problema)),fail).
+pregunta(S):-(si(S)->true; (no(S)->fail; preguntar(S))).
+
+limpiar:-retract(si(_)),fail.
+limpiar:-retract(no(_)),fail.
+
+botones :- lim,
+send(@boton, free),
+send(@btncarrera,free),
+enfermedades(Enfer),
+send(@texto, selection('Gracias a las repsuestas, podemos indagar que usted puede padecer de :')),
+
+send(resp1,selection(Enfer)),
+send(@resp1,font,font(comic,bold,15)),
+new(@boton,button('Inicie su autoevaluación',message(@prolog, botones))),
+send(Menu, display,@boton,point(40,50)),
+send(Menu, display,@btncarrera,point(20,50)),
+limpiar.
+lim:-send(@resp1, selection('')).
